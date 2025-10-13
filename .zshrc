@@ -1,16 +1,12 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
 
-# Install font-jetbrains-mono-nerd-font font (and make your terminal use this font first) in your system and once you souce this .zshrc setup you will be prompted to choose from the displayed options to set uo the p10k.
-
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
 
 if [[ -f "/opt/homebrew/bin/brew" ]] then
   # If you're using macOS, you'll want this enabled
   eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+if [ "$TERM_PROGRAM" != "Apple_Terminal" ]; then
+  eval "$(oh-my-posh init zsh)"
 fi
 
 # Set the directory we want to store zinit and plugins
@@ -25,8 +21,6 @@ fi
 # Source/Load zinit
 source "${ZINIT_HOME}/zinit.zsh"
 
-# Add in Powerlevel10k
-zinit ice depth=1; zinit light romkatv/powerlevel10k
 
 # Add in zsh plugins
 zinit light zsh-users/zsh-syntax-highlighting
@@ -49,8 +43,9 @@ autoload -Uz compinit && compinit
 
 zinit cdreplay -q
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# Init oh-my-posh for zsh
+# Make sure you have oh-my-posh installed and a config file at the specified path and changes as needed in the config file you provided below
+eval "$(oh-my-posh init zsh --config ~/.ohmyposh/zen.toml)"
 
 # Keybindings
 bindkey -e
@@ -84,10 +79,11 @@ alias ls='ls --color'
 alias c='clear'
 alias fman="compgen -c | fzf | xargs man"
 alias k='kubectl'
+alias sudo='sudo '
 
 # Shell integrations
 eval "$(fzf --zsh)"
-eval "$(zoxide init --cmd cd zsh)"
+eval "$(zoxide init zsh)"
 
 
 # --------------------------------------
@@ -113,11 +109,28 @@ export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
 # --------------------------------------
 # ✅ System Default PATHs (Keep at the Very End)
 export PATH="$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+export PATH="$PATH:$HOME/bin"
 
 export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin"
 
 # The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/arjun/gcloud-cli-software/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/arjun/gcloud-cli-software/google-cloud-sdk/path.zsh.inc'; fi
+if [ -f "$HOME/gcloud-cli-software/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/gcloud-cli-software/google-cloud-sdk/path.zsh.inc"; fi
+if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/path.zsh.inc"; fi
 
 # The next line enables shell command completion for gcloud.
-if [ -f '/Users/arjun/gcloud-cli-software/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/arjun/gcloud-cli-software/google-cloud-sdk/completion.zsh.inc'; fi
+if [ -f "$HOME/gcloud-cli-software/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/gcloud-cli-software/google-cloud-sdk/completion.zsh.inc"; fi
+if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi
+
+# ✅ GPG Setup (for signing/encryption)
+if [ -n "$TTY" ]; then
+  export GPG_TTY=$(tty)
+else
+  export GPG_TTY="$TTY"
+fi
+
+# --------------------------------------
+# ✅ Google Cloud Credentials (set only if JSON exists)
+if [ -f "$HOME/gcp_keng02.json" ]; then
+    export GCP_JSON="$HOME/gcp_keng02.json"
+    export GOOGLE_APPLICATION_CREDENTIALS="$GCP_JSON"
+fi
