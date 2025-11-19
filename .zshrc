@@ -80,6 +80,10 @@ alias c='clear'
 alias fman="compgen -c | fzf | xargs man"
 alias k='kubectl'
 alias sudo='sudo '
+alias yt='noglob yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]" --merge-output-format mp4'
+alias ytv='noglob yt-dlp -f "bestvideo[ext=mp4]"'
+alias yta='noglob yt-dlp -f bestaudio -x --audio-format mp3'
+alias ag='antigravity'
 
 # Shell integrations
 eval "$(fzf --zsh)"
@@ -134,3 +138,5 @@ if [ -f "$HOME/gcp_keng02.json" ]; then
     export GCP_JSON="$HOME/gcp_keng02.json"
     export GOOGLE_APPLICATION_CREDENTIALS="$GCP_JSON"
 fi
+# Added by Antigravity
+export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"

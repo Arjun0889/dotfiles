@@ -13,6 +13,7 @@ $ brew install --cask font-jetbrains-mono-nerd-font
 $ brew install zoxide
 $ brew install stow
 $ brew install jandedobbeleer/oh-my-posh/oh-my-posh
+$ brew install yt-dlp
 ```
 
 # Installation
