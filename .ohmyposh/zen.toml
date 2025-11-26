@@ -29,6 +29,16 @@ final_space = true
       style = 'full'
 
   [[blocks.segments]]
+    template = '{{ if .Env.VIRTUAL_ENV }}({{ .Env.VIRTUAL_ENV | base }}) {{ end }}'
+    foreground = 'green'
+    background = 'transparent'
+    type = 'text'
+    style = 'plain'
+
+    [blocks.segments.properties]
+      cache_duration = 'none'
+
+  [[blocks.segments]]
     template = ' {{ .HEAD }}{{ if or (.Working.Changed) (.Staging.Changed) }}*{{ end }} <cyan>{{ if gt .Behind 0 }}⇣{{ end }}{{ if gt .Ahead 0 }}⇡{{ end }}</>'
     foreground = 'p:grey'
     background = 'transparent'

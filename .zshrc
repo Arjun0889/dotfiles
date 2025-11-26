@@ -5,10 +5,6 @@ if [[ -f "/opt/homebrew/bin/brew" ]] then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-if [ "$TERM_PROGRAM" != "Apple_Terminal" ]; then
-  eval "$(oh-my-posh init zsh)"
-fi
-
 # Set the directory we want to store zinit and plugins
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 
@@ -138,5 +134,8 @@ if [ -f "$HOME/gcp_keng02.json" ]; then
     export GCP_JSON="$HOME/gcp_keng02.json"
     export GOOGLE_APPLICATION_CREDENTIALS="$GCP_JSON"
 fi
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
+
+# ✅ Antigravity (only for user 'arjun')
+if [ "$USER" = "arjun" ]; then
+    export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
+fi
