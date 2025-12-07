@@ -1,8 +1,14 @@
 
 
-if [[ -f "/opt/homebrew/bin/brew" ]] then
-  # If you're using macOS, you'll want this enabled
-  eval "$(/opt/homebrew/bin/brew shellenv)"
+# OS Detection
+os_name="$(uname -s)"
+
+# --------------------------------------
+# ✅ Homebrew (macOS only)
+if [[ "$os_name" == "Darwin" ]]; then
+    if [[ -f "/opt/homebrew/bin/brew" ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    fi
 fi
 
 # Set the directory we want to store zinit and plugins
@@ -41,7 +47,9 @@ zinit cdreplay -q
 
 # Init oh-my-posh for zsh
 # Make sure you have oh-my-posh installed and a config file at the specified path and changes as needed in the config file you provided below
-eval "$(oh-my-posh init zsh --config ~/.ohmyposh/zen.toml)"
+if command -v oh-my-posh &> /dev/null; then
+    eval "$(oh-my-posh init zsh --config ~/.ohmyposh/zen.toml)"
+fi
 
 # Keybindings
 bindkey -e
@@ -66,11 +74,21 @@ setopt hist_find_no_dups
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' menu no
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
-zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
+if [[ "$os_name" == "Darwin" ]]; then
+    zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls -G $realpath'
+    zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls -G $realpath'
+else
+    zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
+    zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
+fi
 
 # Aliases
-alias ls='ls --color'
+if [[ "$os_name" == "Darwin" ]]; then
+    alias ls='ls -G'
+else
+    alias ls='ls --color=auto'
+fi
+
 # alias vim='nvim'
 alias c='clear'
 alias fman="compgen -c | fzf | xargs man"
@@ -82,8 +100,21 @@ alias yta='noglob yt-dlp -f bestaudio -x --audio-format mp3'
 alias ag='antigravity'
 
 # Shell integrations
-eval "$(fzf --zsh)"
-eval "$(zoxide init zsh)"
+if command -v fzf &> /dev/null; then
+    # Check if fzf supports --zsh (added in 0.48.0)
+    if fzf --zsh &> /dev/null; then
+        eval "$(fzf --zsh)"
+    else
+        # Fallback for older fzf
+        source <(fzf --bash) 2>/dev/null || true # fzf --bash is also new, maybe just skip or use legacy sourcing if needed. 
+        # Actually, standard legacy sourcing:
+        [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+    fi
+fi
+
+if command -v zoxide &> /dev/null; then
+    eval "$(zoxide init zsh)"
+fi
 
 
 # --------------------------------------
@@ -92,26 +123,34 @@ typeset -U path PATH
 
 # --------------------------------------
 # ✅ JENV Configuration (for Java)
-export PATH="$HOME/.jenv/bin:$PATH"
-eval "$(jenv init -)"
+if [[ -d "$HOME/.jenv" ]]; then
+    export PATH="$HOME/.jenv/bin:$PATH"
+    eval "$(jenv init -)"
+fi
 
 # --------------------------------------
 # ✅ PYENV Configuration (for Python)
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
-eval "$(pyenv init --path)"
-eval "$(pyenv init -)"
+if [[ -d "$HOME/.pyenv" ]]; then
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+fi
 
 # --------------------------------------
-# ✅ Homebrew (Apple Silicon)
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+# ✅ Homebrew (Apple Silicon) - Already handled at top, but keeping PATH export if needed for other tools
+if [[ "$os_name" == "Darwin" ]]; then
+    export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
+fi
 
 # --------------------------------------
 # ✅ System Default PATHs (Keep at the Very End)
 export PATH="$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export PATH="$PATH:$HOME/bin"
 
-export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin"
+if [[ "$os_name" == "Darwin" ]]; then
+    export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin"
+fi
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f "$HOME/gcloud-cli-software/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/gcloud-cli-software/google-cloud-sdk/path.zsh.inc"; fi
@@ -135,7 +174,8 @@ if [ -f "$HOME/gcp_keng02.json" ]; then
     export GOOGLE_APPLICATION_CREDENTIALS="$GCP_JSON"
 fi
 
-# ✅ Antigravity (only for user 'arjun')
-if [ "$USER" = "arjun" ]; then
+# ✅ Antigravity (only for user 'arjun' on mac)
+if [ "$USER" = "arjun" ] && [ "$(uname -s)" = "Darwin" ]; then
     export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
+    export KUBECONFIG="$HOME/.kube/homelab-config"
 fi
