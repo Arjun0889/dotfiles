@@ -104,10 +104,17 @@ alias gs='git status'
 # ✅ Tmux
 # --------------------------------------
 
-# Aliases — session management
-alias ta='tmux attach -t'           # ta <name>   — attach to existing session
+# Smart attach/create: t <name> or just t for "main"
+# t          → attach to "main" session (or create it)
+# t work     → attach to "work" session (or create it)
+# t dotfiles → attach to "dotfiles" session (or create it)
+t() {
+  local session=${1:-main}
+  tmux new-session -A -s "$session"
+}
+
+# Session management aliases
 alias tl='tmux list-sessions'       # tl          — list all running sessions
-alias tn='tmux new -s'              # tn <name>   — create a new named session
 alias tk='tmux kill-session -t'     # tk <name>   — kill a session
 alias td='tmux detach'              # td          — detach (session keeps running in bg)
 
@@ -115,17 +122,6 @@ alias td='tmux detach'              # td          — detach (session keeps runn
 # Plugged in? Use System Settings → Battery → Prevent sleeping on power adapter instead.
 alias wake='caffeinate -i & disown; echo "Caffeinated. Run: uncafe to stop."'
 alias uncafe='pkill caffeinate && echo "Caffeinate stopped."'
-
-# Auto-start: new terminal windows automatically land in tmux session "main"
-# Disable by setting TMUX_AUTO_START=0 in your terminal app's environment
-TMUX_AUTO_START=${TMUX_AUTO_START:-1}
-if [[ "$TMUX_AUTO_START" == "1" ]] && \
-   [[ -z "$TMUX" ]] && \
-   [[ "$TERM_PROGRAM" != "vscode" ]] && \
-   [[ -z "$INSIDE_EMACS" ]] && \
-   command -v tmux &>/dev/null; then
-    exec tmux new-session -A -s main
-fi
 
 # Shell integrations
 if command -v fzf &> /dev/null; then
