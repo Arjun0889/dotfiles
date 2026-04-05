@@ -3,7 +3,7 @@ os_name="$(uname -s)"
 
 # --------------------------------------
 # ✅ Homebrew (macOS only)
-# Sets HOMEBREW_PREFIX, HOMEBREW_CELLAR etc — used by later sections
+# Sets HOMEBREW_PREFIX used by later sections
 if [[ "$os_name" == "Darwin" ]]; then
     if [[ -f "/opt/homebrew/bin/brew" ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -22,20 +22,19 @@ source "${ZINIT_HOME}/zinit.zsh"
 # Synchronous: completions must load before compinit
 zinit light zsh-users/zsh-completions
 
-# Deferred: load after first prompt appears (VS Code-style — shell is usable instantly)
-# syntax-highlighting, autosuggestions, fzf-tab don't need to exist before you type
+# Deferred: load after first prompt — shell is usable instantly while these finish
 zinit wait lucid light-mode for \
     zsh-users/zsh-syntax-highlighting \
     zsh-users/zsh-autosuggestions \
     Aloxaf/fzf-tab
 
 # --------------------------------------
-# ✅ Completions (cached — only regenerates once per day)
+# ✅ Completions (cached — full audit once a day, fast cache otherwise)
 autoload -Uz compinit
 if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
-    compinit        # full check (once a day)
+    compinit
 else
-    compinit -C     # use cache (skips security audit)
+    compinit -C
 fi
 zinit cdreplay -q
 
@@ -103,9 +102,9 @@ t() {
     local session=${1:-home}
     tmux new-session -A -s "$session"
 }
-alias tl='tmux list-sessions'       # list all sessions
-alias tk='tmux kill-session -t'     # tk <name> — kill a session
-alias td='tmux detach'              # detach (session keeps running)
+alias tl='tmux list-sessions'
+alias tk='tmux kill-session -t'
+alias td='tmux detach'
 
 # Keep Mac awake for remote Claude sessions (screen can lock, system stays up)
 alias wake='caffeinate -i & disown; echo "Caffeinated. Run: uncafe to stop."'
@@ -130,70 +129,15 @@ fi
 typeset -U path PATH
 
 # --------------------------------------
-# ✅ JENV (Java)
+# ✅ JENV (Java — multiple versions managed)
 if [[ -d "$HOME/.jenv" ]]; then
     export PATH="$HOME/.jenv/bin:$PATH"
     eval "$(jenv init -)"
 fi
 
 # --------------------------------------
-# ✅ Conda
-# Prevent conda from modifying the prompt (oh-my-posh handles it)
-export CONDA_CHANGEPS1=false
-
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('$HOME/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "$HOME/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="$HOME/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
-
-# Ensure conda's Python takes precedence over pyenv when activated
-_manage_conda_pyenv_path() {
-    if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
-        if [[ "$PATH" == *"/.pyenv/"* ]]; then
-            PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/.pyenv/' | tr '\n' ':' | sed 's/:$//')"
-            export PATH
-        fi
-    else
-        if [[ -d "$HOME/.pyenv" ]] && [[ "$PATH" != *"/.pyenv/"* ]]; then
-            export PATH="$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH"
-        fi
-    fi
-}
-
-if typeset -f conda > /dev/null 2>&1; then
-    functions[_original_conda]=$functions[conda]
-    conda() {
-        _original_conda "$@"
-        local ret=$?
-        if [[ "$1" == "activate" ]] || [[ "$1" == "deactivate" ]]; then
-            _manage_conda_pyenv_path
-        fi
-        return $ret
-    }
-fi
-
-# --------------------------------------
-# ✅ Pyenv (Python)
-if [[ -d "$HOME/.pyenv" ]]; then
-    export PYENV_ROOT="$HOME/.pyenv"
-    export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
-    eval "$(pyenv init --path)"
-    eval "$(pyenv init -)"
-fi
-
-# --------------------------------------
 # ✅ PostgreSQL@17
-# Uses $HOMEBREW_PREFIX (set by brew shellenv above) — avoids spawning brew subprocess
+# Uses $HOMEBREW_PREFIX (set by brew shellenv above) — no subprocess spawn
 if [[ -n "$HOMEBREW_PREFIX" ]]; then
     POSTGRES_PATH="$HOMEBREW_PREFIX/opt/postgresql@17"
     if [[ -d "$POSTGRES_PATH/bin" ]]; then
@@ -254,9 +198,8 @@ fi
 
 # --------------------------------------
 # ✅ NVM (lazy-loaded — only initialises when you first use node/npm/nvm)
-# Saves ~250ms on every shell open. First use of node/npm/nvm triggers real load.
+# Saves ~250ms on every shell open. First use triggers real load once per session.
 export NVM_DIR="$HOME/.nvm"
-
 _load_nvm() {
     unset -f nvm node npm npx yarn pnpm
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
