@@ -3,72 +3,66 @@ os_name="$(uname -s)"
 
 # --------------------------------------
 # ✅ Homebrew (macOS only)
+# Sets HOMEBREW_PREFIX, HOMEBREW_CELLAR etc — used by later sections
 if [[ "$os_name" == "Darwin" ]]; then
     if [[ -f "/opt/homebrew/bin/brew" ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
 fi
 
-# Set the directory we want to store zinit and plugins
+# --------------------------------------
+# ✅ Zinit Setup
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
-
-# Download Zinit, if it's not there yet
 if [ ! -d "$ZINIT_HOME" ]; then
-   mkdir -p "$(dirname $ZINIT_HOME)"
-   git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+    mkdir -p "$(dirname $ZINIT_HOME)"
+    git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 fi
-
-# Source/Load zinit
 source "${ZINIT_HOME}/zinit.zsh"
 
-
-# Add in zsh plugins
-zinit light zsh-users/zsh-syntax-highlighting
+# Synchronous: completions must load before compinit
 zinit light zsh-users/zsh-completions
-zinit light zsh-users/zsh-autosuggestions
-zinit light Aloxaf/fzf-tab
 
-# Add in snippets
-# zinit snippet OMZL::git.zsh
-# zinit snippet OMZP::git
-# zinit snippet OMZP::sudo
-# zinit snippet OMZP::archlinux
-# zinit snippet OMZP::aws
-# zinit snippet OMZP::kubectl
-# zinit snippet OMZP::kubectx
-# zinit snippet OMZP::command-not-found
+# Deferred: load after first prompt appears (VS Code-style — shell is usable instantly)
+# syntax-highlighting, autosuggestions, fzf-tab don't need to exist before you type
+zinit wait lucid light-mode for \
+    zsh-users/zsh-syntax-highlighting \
+    zsh-users/zsh-autosuggestions \
+    Aloxaf/fzf-tab
 
-# Load completions
-autoload -Uz compinit && compinit
-
+# --------------------------------------
+# ✅ Completions (cached — only regenerates once per day)
+autoload -Uz compinit
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+    compinit        # full check (once a day)
+else
+    compinit -C     # use cache (skips security audit)
+fi
 zinit cdreplay -q
 
-# Init oh-my-posh for zsh
-# Make sure you have oh-my-posh installed and a config file at the specified path and changes as needed in the config file you provided below
+# --------------------------------------
+# ✅ Oh-My-Posh prompt
 if command -v oh-my-posh &> /dev/null; then
     eval "$(oh-my-posh init zsh --config ~/.ohmyposh/zen.toml)"
 fi
 
-# Keybindings
+# --------------------------------------
+# ✅ Keybindings (emacs mode)
 bindkey -e
 bindkey '^p' history-search-backward
 bindkey '^n' history-search-forward
 bindkey '^[w' kill-region
 
-# History
+# --------------------------------------
+# ✅ History
 HISTSIZE=5000
 HISTFILE=~/.zsh_history
 SAVEHIST=$HISTSIZE
 HISTDUP=erase
-setopt appendhistory
-setopt sharehistory
-setopt hist_ignore_space
-setopt hist_ignore_all_dups
-setopt hist_save_no_dups
-setopt hist_ignore_dups
-setopt hist_find_no_dups
+setopt appendhistory sharehistory
+setopt hist_ignore_space hist_ignore_all_dups hist_save_no_dups hist_find_no_dups
 
-# Completion styling
+# --------------------------------------
+# ✅ Completion Styling
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 zstyle ':completion:*' menu no
@@ -80,14 +74,14 @@ else
     zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 fi
 
-# Aliases
+# --------------------------------------
+# ✅ Aliases
 if [[ "$os_name" == "Darwin" ]]; then
     alias ls='ls -G'
 else
     alias ls='ls --color=auto'
 fi
 
-# alias vim='nvim'
 alias c='clear'
 alias fman="compgen -c | fzf | xargs man"
 alias k='kubectl'
@@ -99,39 +93,30 @@ alias ag='antigravity'
 alias gpu='git pull --rebase'
 alias gps='git push'
 alias gs='git status'
+alias pk='pkill audiosessiond'
 
 # --------------------------------------
 # ✅ Tmux
-# --------------------------------------
-
-# Smart attach/create: t <name> or just t for "main"
-# t          → attach to "main" session (or create it)
+# t          → attach to "home" session (or create it)
 # t work     → attach to "work" session (or create it)
-# t dotfiles → attach to "dotfiles" session (or create it)
 t() {
-  local session=${1:-home}
-  tmux new-session -A -s "$session"
+    local session=${1:-home}
+    tmux new-session -A -s "$session"
 }
+alias tl='tmux list-sessions'       # list all sessions
+alias tk='tmux kill-session -t'     # tk <name> — kill a session
+alias td='tmux detach'              # detach (session keeps running)
 
-# Session management aliases
-alias tl='tmux list-sessions'       # tl          — list all running sessions
-alias tk='tmux kill-session -t'     # tk <name>   — kill a session
-alias td='tmux detach'              # td          — detach (session keeps running in bg)
-
-# Keep Mac awake for remote Claude sessions (screen locks, system stays up)
-# Plugged in? Use System Settings → Battery → Prevent sleeping on power adapter instead.
+# Keep Mac awake for remote Claude sessions (screen can lock, system stays up)
 alias wake='caffeinate -i & disown; echo "Caffeinated. Run: uncafe to stop."'
 alias uncafe='pkill caffeinate && echo "Caffeinate stopped."'
 
-# Shell integrations
+# --------------------------------------
+# ✅ Shell Integrations
 if command -v fzf &> /dev/null; then
-    # Check if fzf supports --zsh (added in 0.48.0)
     if fzf --zsh &> /dev/null; then
         eval "$(fzf --zsh)"
     else
-        # Fallback for older fzf
-        source <(fzf --bash) 2>/dev/null || true # fzf --bash is also new, maybe just skip or use legacy sourcing if needed. 
-        # Actually, standard legacy sourcing:
         [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
     fi
 fi
@@ -140,21 +125,20 @@ if command -v zoxide &> /dev/null; then
     eval "$(zoxide init zsh)"
 fi
 
-
 # --------------------------------------
 # ✅ Remove Duplicate PATH Entries
 typeset -U path PATH
 
 # --------------------------------------
-# ✅ JENV Configuration (for Java)
+# ✅ JENV (Java)
 if [[ -d "$HOME/.jenv" ]]; then
     export PATH="$HOME/.jenv/bin:$PATH"
     eval "$(jenv init -)"
 fi
 
 # --------------------------------------
-# ✅ Conda Configuration
-# Prevent conda from modifying the prompt (let Oh My Posh handle it)
+# ✅ Conda
+# Prevent conda from modifying the prompt (oh-my-posh handles it)
 export CONDA_CHANGEPS1=false
 
 # >>> conda initialize >>>
@@ -175,25 +159,19 @@ unset __conda_setup
 # Ensure conda's Python takes precedence over pyenv when activated
 _manage_conda_pyenv_path() {
     if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
-        # Conda is active - remove pyenv from PATH if present
         if [[ "$PATH" == *"/.pyenv/"* ]]; then
             PATH="$(echo "$PATH" | tr ':' '\n' | grep -v '/.pyenv/' | tr '\n' ':' | sed 's/:$//')"
             export PATH
         fi
     else
-        # Conda is fully deactivated - restore pyenv if not already in PATH
         if [[ -d "$HOME/.pyenv" ]] && [[ "$PATH" != *"/.pyenv/"* ]]; then
             export PATH="$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH"
         fi
     fi
 }
 
-# Only wrap conda if it was successfully initialized
 if typeset -f conda > /dev/null 2>&1; then
-    # Save the original conda function created by conda init
     functions[_original_conda]=$functions[conda]
-
-    # Wrap conda to manage PATH after activate/deactivate
     conda() {
         _original_conda "$@"
         local ret=$?
@@ -205,7 +183,7 @@ if typeset -f conda > /dev/null 2>&1; then
 fi
 
 # --------------------------------------
-# ✅ PYENV Configuration (for Python) 
+# ✅ Pyenv (Python)
 if [[ -d "$HOME/.pyenv" ]]; then
     export PYENV_ROOT="$HOME/.pyenv"
     export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
@@ -214,12 +192,12 @@ if [[ -d "$HOME/.pyenv" ]]; then
 fi
 
 # --------------------------------------
-# ✅ PostgreSQL@17 (Homebrew on macOS or Linux)
-if command -v brew &> /dev/null; then
-    POSTGRES_PATH="$(brew --prefix postgresql@17 2>/dev/null)"
-    if [[ -n "$POSTGRES_PATH" ]] && [[ -d "$POSTGRES_PATH/bin" ]]; then
+# ✅ PostgreSQL@17
+# Uses $HOMEBREW_PREFIX (set by brew shellenv above) — avoids spawning brew subprocess
+if [[ -n "$HOMEBREW_PREFIX" ]]; then
+    POSTGRES_PATH="$HOMEBREW_PREFIX/opt/postgresql@17"
+    if [[ -d "$POSTGRES_PATH/bin" ]]; then
         export PATH="$POSTGRES_PATH/bin:$PATH"
-        # For compilers
         export LDFLAGS="-L$POSTGRES_PATH/lib${LDFLAGS:+ $LDFLAGS}"
         export CPPFLAGS="-I$POSTGRES_PATH/include${CPPFLAGS:+ $CPPFLAGS}"
     fi
@@ -227,79 +205,66 @@ if command -v brew &> /dev/null; then
 fi
 
 # --------------------------------------
-# ✅ Homebrew (Apple Silicon) - Already handled at top, but keeping PATH export if needed for other tools
+# ✅ System PATHs
 if [[ "$os_name" == "Darwin" ]]; then
     export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
 fi
-
-# --------------------------------------
-# ✅ System Default PATHs (Keep at the Very End)
 export PATH="$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export PATH="$PATH:$HOME/bin"
-
 if [[ "$os_name" == "Darwin" ]]; then
     export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin"
 fi
 
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f "$HOME/gcloud-cli-software/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/gcloud-cli-software/google-cloud-sdk/path.zsh.inc"; fi
-if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/google-cloud-sdk/path.zsh.inc"; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f "$HOME/gcloud-cli-software/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/gcloud-cli-software/google-cloud-sdk/completion.zsh.inc"; fi
-if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/google-cloud-sdk/completion.zsh.inc"; fi
-
-# ✅ GPG Setup (for signing/encryption)
-if [ -n "$TTY" ]; then
-  export GPG_TTY=$(tty)
-else
-  export GPG_TTY="$TTY"
+# --------------------------------------
+# ✅ Google Cloud SDK
+if [ -f "$HOME/gcloud-cli-software/google-cloud-sdk/path.zsh.inc" ]; then
+    . "$HOME/gcloud-cli-software/google-cloud-sdk/path.zsh.inc"
+fi
+if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then
+    . "$HOME/google-cloud-sdk/path.zsh.inc"
+fi
+if [ -f "$HOME/gcloud-cli-software/google-cloud-sdk/completion.zsh.inc" ]; then
+    . "$HOME/gcloud-cli-software/google-cloud-sdk/completion.zsh.inc"
+fi
+if [ -f "$HOME/google-cloud-sdk/completion.zsh.inc" ]; then
+    . "$HOME/google-cloud-sdk/completion.zsh.inc"
 fi
 
 # --------------------------------------
-# ✅ Google Cloud Credentials (set only if JSON exists)
+# ✅ GPG
+if [ -n "$TTY" ]; then
+    export GPG_TTY=$(tty)
+else
+    export GPG_TTY="$TTY"
+fi
+
+# --------------------------------------
+# ✅ Google Cloud Credentials
 if [ -f "$HOME/gcp_keng02.json" ]; then
     export GCP_JSON="$HOME/gcp_keng02.json"
     export GOOGLE_APPLICATION_CREDENTIALS="$GCP_JSON"
 fi
 
-alias pk='pkill audiosessiond'
-
-# ✅ Antigravity (only for user 'arjun' on mac)
+# --------------------------------------
+# ✅ Antigravity
 if [ "$USER" = "arjun" ] && [ "$(uname -s)" = "Darwin" ]; then
     export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
     export KUBECONFIG="$HOME/.kube/homelab-config"
 fi
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
 
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
-
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
-
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
-
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
-
+# --------------------------------------
+# ✅ NVM (lazy-loaded — only initialises when you first use node/npm/nvm)
+# Saves ~250ms on every shell open. First use of node/npm/nvm triggers real load.
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
-
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
-
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
-
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
-
-# Added by Antigravity
-export PATH="/Users/arjun/.antigravity/antigravity/bin:$PATH"
+_load_nvm() {
+    unset -f nvm node npm npx yarn pnpm
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+}
+nvm()  { _load_nvm; nvm  "$@"; }
+node() { _load_nvm; node "$@"; }
+npm()  { _load_nvm; npm  "$@"; }
+npx()  { _load_nvm; npx  "$@"; }
+yarn() { _load_nvm; yarn "$@"; }
+pnpm() { _load_nvm; pnpm "$@"; }
