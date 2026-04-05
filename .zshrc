@@ -96,8 +96,13 @@ alias pk='pkill audiosessiond'
 
 # --------------------------------------
 # ✅ Tmux
-# t          → attach to "home" session (or create it)
-# t work     → attach to "work" session (or create it)
+# Auto-start: every new terminal lands in "home" session
+# Navigate to other sessions with: Ctrl+b s
+if [[ -z "$TMUX" ]] && [[ "$TERM_PROGRAM" != "vscode" ]] && command -v tmux &>/dev/null; then
+    exec tmux new-session -A -s home
+fi
+
+# t <name> → attach to named session (or create it), t alone → "home"
 t() {
     local session=${1:-home}
     tmux new-session -A -s "$session"
