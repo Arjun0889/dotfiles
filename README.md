@@ -64,14 +64,14 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 tmux                        # start tmux
 ```
 
-Then inside tmux press `Ctrl+Space` then `I` (capital i) to install all plugins.
+Then inside tmux press `Ctrl+b` then `I` (capital i) to install all plugins.
 Wait for the install to finish, then press `Enter`.
 
 ## Key bindings quick reference
 
 | Action | Key |
 |---|---|
-| Prefix | `Ctrl+Space` |
+| Prefix | `Ctrl+b` |
 | Vertical split | `prefix + \|` |
 | Horizontal split | `prefix + -` |
 | Navigate panes | `prefix + h/j/k/l` |

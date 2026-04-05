@@ -40,7 +40,7 @@ tmux server  (one per machine, starts automatically)
 
 ## Your prefix key
 
-Everything in tmux starts with the **prefix**: `Ctrl+Space`
+Everything in tmux starts with the **prefix**: `Ctrl+b`
 
 You press prefix, release it, then press the command key.
 It does not conflict with your emacs `Ctrl+a` (beginning-of-line) in the shell.
@@ -246,7 +246,7 @@ Claude response or a file. Unzoom to go back to split view.
 ## Quick reference card
 
 ```
-PREFIX = Ctrl+Space
+PREFIX = Ctrl+b
 
 SESSIONS          WINDOWS           PANES
 ──────────────    ──────────────    ──────────────────────
