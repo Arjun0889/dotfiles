@@ -41,3 +41,58 @@ Follow this link for more clarity
 https://www.youtube.com/watch?v=y6XCebnB9gs
 ```
 
+# Tmux
+
+tmux keeps terminal sessions alive even after you close the window or lock your screen.
+See `TMUX_GUIDE.md` for a full learning guide and Claude Code workflows.
+
+## Install
+
+```bash
+brew install tmux
+```
+
+## TPM (Plugin Manager) — one-time setup
+
+```bash
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+```
+
+## First run
+
+```bash
+tmux                        # start tmux
+```
+
+Then inside tmux press `Ctrl+Space` then `I` (capital i) to install all plugins.
+Wait for the install to finish, then press `Enter`.
+
+## Key bindings quick reference
+
+| Action | Key |
+|---|---|
+| Prefix | `Ctrl+Space` |
+| Vertical split | `prefix + \|` |
+| Horizontal split | `prefix + -` |
+| Navigate panes | `prefix + h/j/k/l` |
+| Resize panes | `prefix + H/J/K/L` |
+| New window | `prefix + c` |
+| Next / prev window | `prefix + n / p` |
+| Enter copy mode | `prefix + [` or `prefix + Esc` |
+| Copy selection | `v` then `y` (in copy mode) |
+| Detach session | `prefix + d` |
+| Reload config | `prefix + r` |
+| Save session | `prefix + Ctrl+s` |
+| Restore session | `prefix + Ctrl+r` |
+
+## Shell aliases (from .zshrc)
+
+```bash
+ta <name>    # attach to session
+tn <name>    # new named session
+tl           # list sessions
+tk <name>    # kill session
+wake         # caffeinate (keep Mac awake on battery for Claude remote)
+uncafe       # stop caffeinate
+```
+
