@@ -57,7 +57,7 @@ Think of it like the `Cmd` key on Mac — it's the modifier that tells tmux
 ```bash
 # From shell (outside tmux):
 tn main              # new session named "main"
-ta main              # attach to "main"
+t home              # attach to "home"
 tl                   # list sessions
 tk main              # kill session
 
@@ -130,7 +130,7 @@ prefix + Ctrl+s      # manually save session (layout + running commands)
 prefix + Ctrl+r      # manually restore last save
 
 # Continuum auto-saves every 15 minutes and auto-restores on tmux start.
-# After a reboot: just run `ta main` and everything comes back.
+# After a reboot: just run `t home` and everything comes back.
 ```
 
 ---
@@ -271,8 +271,8 @@ v begin   V line   y yank   q quit
 → Fixed. `escape-time 10` is set in your `.tmux.conf`.
 
 **"I accidentally closed my terminal and lost everything"**
-→ The tmux session is still running. Open a new terminal and run `ta main`.
-→ If you truly killed the server: tmux-continuum auto-saved 15min ago. Run `ta main`
+→ The tmux session is still running. Open a new terminal and run `t home`.
+→ If you truly killed the server: tmux-continuum auto-saved 15min ago. Run `t home`
    and tmux-resurrect will restore it.
 
 **"prefix + l conflicts with something"**

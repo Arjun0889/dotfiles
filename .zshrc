@@ -109,7 +109,7 @@ alias gs='git status'
 # t work     → attach to "work" session (or create it)
 # t dotfiles → attach to "dotfiles" session (or create it)
 t() {
-  local session=${1:-main}
+  local session=${1:-home}
   tmux new-session -A -s "$session"
 }
 
