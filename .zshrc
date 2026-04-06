@@ -105,7 +105,14 @@ fi
 # t <name> → attach to named session (or create it), t alone → "home"
 t() {
     local session=${1:-home}
-    tmux new-session -A -s "$session"
+    if [[ -n "$TMUX" ]]; then
+        # Inside tmux — create if needed, switch to it
+        tmux new-session -d -s "$session" 2>/dev/null
+        tmux switch-client -t "$session"
+    else
+        # Outside tmux — attach or create
+        tmux new-session -A -s "$session"
+    fi
 }
 alias tl='tmux list-sessions'
 alias tk='tmux kill-session -t'
